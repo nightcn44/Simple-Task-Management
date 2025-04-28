@@ -23,5 +23,13 @@
     "mysql2": "^3.14.1",
     "nodemon": "^3.1.10",
     "prisma": "^6.6.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nightcn44/Simple_Task-Management.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nightcn44/Simple_Task-Management/issues"
+  },
+  "homepage": "https://github.com/nightcn44/Simple_Task-Management#readme"
 }
