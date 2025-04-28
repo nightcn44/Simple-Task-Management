@@ -1,39 +1,56 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const User = require('../models/user');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
   try {
     const existing = await User.findOne({ $or: [{ email }, { username }] });
-    if (existing) return res.status(400).json({ message: 'Username หรือ Email มีผู้ใช้งานแล้ว' });
+    if (existing) {
+      return res.status(400).json({ message: 'Username is already in use' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ username, email, password: hashedPassword });
 
-    res.status(201).json({ message: 'ลงทะเบียนสำเร็จ' });
+    const newdata = await User.create({ username, email, password: hashedPassword });
+
+    await newdata.save();
+
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ message: 'ไม่พบผู้ใช้งาน' });
+      return res.status(400).json({ message: 'User not found' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'รหัสผ่านไม่ถูกต้อง' });
+      return res.status(400).json({ message: 'Invalid password' });
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    res.status(200).json({ message: 'Login successful', token });
   } catch (err) {
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };

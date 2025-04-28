@@ -1,5 +1,5 @@
-const Task = require('../models/Task');
-const User = require('../models/User');
+const Task = require('../models/task');
+const User = require('../models/user');
 
 exports.createTask = async (req, res) => {
   const { title, description, assignedTo, status } = req.body;
@@ -14,9 +14,9 @@ exports.createTask = async (req, res) => {
     });
 
     res.status(201).json(task);
-
   } catch (err) {
-    res.status(500).json({ message: 'ไม่สามารถสร้างงานได้', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
@@ -30,31 +30,31 @@ exports.getTasks = async (req, res) => {
     }).populate('assignedTo', 'username email');
 
     res.json(tasks);
-
   } catch (err) {
-    res.status(500).json({ message: 'ไม่สามารถโหลดงานได้', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
 exports.getTaskById = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id).populate('assignedTo', 'username email');
-    if (!task) return res.status(404).json({ message: 'ไม่พบงาน' });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
 
     res.json(task);
-
   } catch (err) {
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'ไม่พบงาน' });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
 
     if (task.createdBy.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'คุณไม่มีสิทธิ์แก้ไขงานนี้' });
+      return res.status(403).json({ message: 'You do not have permission to edit this task' });
     }
 
     Object.assign(task, req.body);
@@ -63,24 +63,26 @@ exports.updateTask = async (req, res) => {
     res.json(task);
 
   } catch (err) {
-    res.status(500).json({ message: 'แก้ไขงานไม่สำเร็จ', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
 exports.deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'ไม่พบงาน' });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
 
     if (task.createdBy.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'คุณไม่มีสิทธิ์ลบงานนี้' });
+      return res.status(403).json({ message: 'You do not have permission to delete this task' });
     }
 
     await task.remove();
 
-    res.json({ message: 'ลบงานสำเร็จ' });
+    res.json({ message: 'Task deleted successfully' });
 
   } catch (err) {
-    res.status(500).json({ message: 'ลบงานไม่สำเร็จ', error: err.message });
+    console.log(err);
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
